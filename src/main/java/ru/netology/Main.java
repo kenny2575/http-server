@@ -42,7 +42,7 @@ public class Main {
                 e.printStackTrace();
             }
         });
-        
+
         var server = new Server();
         server.run();
 

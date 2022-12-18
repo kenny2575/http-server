@@ -15,7 +15,8 @@ public class Server {
     private final int PORT = 9999;
     private final int MAX_THREAD_POOL = 64;
     private final ExecutorService executeIt;
-
+    public static final String SC_OK = "200 OK";
+    public static final String NOT_ALLOWED = "405 Not allowed";
     static ConcurrentHashMap<String, ConcurrentHashMap<String, Handler>> handlers = new ConcurrentHashMap<>();
 
     public Server() {
@@ -34,12 +35,20 @@ public class Server {
     }
 
     public static void sc_ok(BufferedOutputStream out, String mimeType, long length) throws IOException {
-        sc_ok(out, mimeType, length, "");
+        sendResponse(out, mimeType, length, "", SC_OK);
     }
 
     public static void sc_ok(BufferedOutputStream out, String mimeType, long length, String message) throws IOException {
+        sendResponse(out, mimeType, length, message, SC_OK);
+    }
+
+    public static void sendNotAllowed(BufferedOutputStream out, String mimeType, long length, String message) throws IOException {
+        sendResponse(out, mimeType, length, message, NOT_ALLOWED);
+    }
+
+    public static void sendResponse(BufferedOutputStream out, String mimeType, long length, String message, String status) throws IOException {
         out.write((
-                "HTTP/1.1 200 OK\r\n" +
+                "HTTP/1.1 " + status + "\r\n" +
                         "Content-Type: " + mimeType + "\r\n" +
                         "Content-Length: " + length + "\r\n" +
                         "Connection: close\r\n" +
@@ -78,7 +87,6 @@ public class Server {
         try {
             final var filePath = Path.of(".", "public", request.getPath());
             final var mimeType = Files.probeContentType(filePath);
-            final var length = Files.size(filePath);
             final var template = Files.readString(filePath);
             CharSequence charSequence = request.getMethod();
             try {
@@ -86,7 +94,7 @@ public class Server {
                                 "{method}",
                                 "'"+charSequence+"'")
                         .getBytes();
-                sc_ok(out, mimeType, length);
+                sendNotAllowed(out, mimeType, content.length, "");
                 out.write(content);
             }catch (Exception e) {
                 e.printStackTrace();

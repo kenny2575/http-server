@@ -1,10 +1,12 @@
 package ru.netology.server;
 
+import org.apache.http.NameValuePair;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.util.List;
 
 public class SingleThreadRunner implements Runnable {
     private final Socket socket;
@@ -37,15 +39,20 @@ public class SingleThreadRunner implements Runnable {
         ) {
 
             var requestLine = in.readLine();
+            assert requestLine != null;
             var requestData = requestLine.split(" ");
-
-            System.out.println(requestData[0] + " " + requestData[1]);
 
             if (requestData.length != 3) {
                 badRequest(out);
             } else {
 
-                Request request = new Request(requestData[0], requestData[1]);
+                Request request = new RequestBuilder()
+                        .addMethod(requestData[0])
+                        .addPath(requestData[1])
+                        .build();
+
+                printParams(request.getQueryParam());
+                printParams(request.getQueryParam("test"));
 
                 if (Server.handlers.containsKey(request.getPath())) {
                     if (Server.handlers.get(request.getPath()).containsKey(request.getMethod())) {
@@ -60,5 +67,9 @@ public class SingleThreadRunner implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void printParams(List<NameValuePair> list){
+        list.forEach(System.out::println);
     }
 }
